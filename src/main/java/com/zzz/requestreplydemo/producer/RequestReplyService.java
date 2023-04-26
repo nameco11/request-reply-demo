@@ -28,6 +28,7 @@ public class RequestReplyService {
 
 
     public String sendRequest(String message, String sessionId, String serialId) {
+        // sessionId và serialId,  sử dụng làm key cho Kafka message
         RequestKey requestKey = new RequestKey(sessionId, serialId);
 
         ProducerRecord<RequestKey, String> record = new ProducerRecord<>(REQUEST_TOPIC, requestKey, message);

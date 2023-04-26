@@ -22,9 +22,9 @@ public class RequestReplyStream {
     public KStream<RequestKey, String> kStream(org.apache.kafka.streams.StreamsBuilder streamsBuilder) {
         Serde<RequestKey> requestKeySerde = new JsonSerde<>(RequestKey.class);
         KStream<RequestKey, String> kStream = streamsBuilder.stream(REQUEST_TOPIC, Consumed.with(requestKeySerde, Serdes.String()));
-
+        // xử lý mess
         kStream.mapValues(value -> "Processed: " + value)
-                .to(RESPONSE_TOPIC, Produced.with(requestKeySerde, Serdes.String()));
+                .to(RESPONSE_TOPIC, Produced.with(requestKeySerde, Serdes.String()));  //Kafka Streams giữ nguyên key (RequestKey) của message.
 
         return kStream;
     }
