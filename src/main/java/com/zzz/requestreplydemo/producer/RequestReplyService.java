@@ -20,28 +20,27 @@ public class RequestReplyService {
 
     private static final String REQUEST_TOPIC = "request-topic";
 
-    ObjectMapper objectMapper = new ObjectMapper();
-
-
     @Autowired
     private ReplyingKafkaTemplate<RequestKey, String, String> replyingKafkaTemplate;
 
 
+//    RequestKey: Sử dụng sessionId và serialId, RequestKey để sử dụng làm khóa (key - correlation id )cho Kafka message.
+//    ProducerRecord: Sử dụng RequestKey, message, và topic REQUEST_TOPIC, init ProducerRecord để request đến Kafka.
+//    replyingKafkaTemplate,  gửi request đến Kafka và nhận response
+//    sendAndReceive return RequestReplyFuture đại diện cho kết quả trả về của yêu cầu.
+//    Lấy kết quả gửi: Sử dụng future.getSendFuture().get() để lấy kết quả gửi của yêu cầu. Nếu gửi thành công, kết quả sẽ được lưu trong SendResult.
+//    Lấy kết quả nhận: Sử dụng future.get() để lấy kết quả nhận của yêu cầu. Đây là một phương thức đồng bộ và sẽ chờ đợi cho đến khi nhận được kết quả trả về từ Kafka.
+//    Trả về kết quả: Nếu nhận được kết quả trả về, return value của response.
     public String sendRequest(String message, String sessionId, String serialId) {
         // sessionId và serialId,  sử dụng làm key cho Kafka message
         RequestKey requestKey = new RequestKey(sessionId, serialId);
-
         ProducerRecord<RequestKey, String> record = new ProducerRecord<>(REQUEST_TOPIC, requestKey, message);
-        record.headers().add("session_id", sessionId.getBytes(StandardCharsets.UTF_8));
-        record.headers().add("serial_id", serialId.getBytes(StandardCharsets.UTF_8));
-
         RequestReplyFuture<RequestKey, String, String> future = replyingKafkaTemplate.sendAndReceive(record);
 
         try {
-            SendResult<RequestKey, String> sendResult = future.getSendFuture().get(30, TimeUnit.SECONDS);
+            SendResult<RequestKey, String> sendResult = future.getSendFuture().get(10, TimeUnit.SECONDS);
             System.out.println("Sent request: " + sendResult.getRecordMetadata());
-
-            ConsumerRecord<RequestKey, String> response = future.get(30, TimeUnit.SECONDS);
+            ConsumerRecord<RequestKey, String> response = future.get(10, TimeUnit.SECONDS);
             System.out.println("Received response: " + response);
             return response.value();
         } catch (InterruptedException | ExecutionException | TimeoutException e) {
